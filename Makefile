@@ -5,7 +5,7 @@ OBJECT=parser
 
 $(OBJECT): lex.yy.o  yacc.tab.o
 	$(CC) lex.yy.o yacc.tab.o -o $(OBJECT)
-	@./$(OBJECT)	#编译后立刻运行
+	@./$(OBJECT)	#Run immediately after compilation
 
 lex.yy.o: lex.yy.c
 	$(CC) -c lex.yy.c
@@ -20,4 +20,4 @@ yacc.tab.c  yacc.tab.h: yacc.y  prepare.h  ASTNode.h
 	$(YACC) -d yacc.y
 
 clean:
-	@rm -f $(OBJECT) *.o yacc.tab.* lex.yy.c
+	@rm -f $(OBJECT) *.o yacc.tab.* lex.yy.c *.js

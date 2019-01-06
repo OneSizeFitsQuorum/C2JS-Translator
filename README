@@ -1,1 +1,4 @@
 输入make即可解析
+
+解析之前需要用npm安装printf:
+$ npm install printf
