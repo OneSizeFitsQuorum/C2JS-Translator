@@ -3,8 +3,8 @@
 #include<iostream>
 using namespace std;
 
-typedef enum {intType, charType} typeEnum;
-typedef enum {typeType, typeInt, typeChar, typeString, typeId, typeExpr, typeExprList, typeStatement,
+typedef enum {intType, charType, doubleType} typeEnum;
+typedef enum {typeType, typeInt, typeChar, typeString, typeDouble,typeId, typeExpr, typeExprList, typeStatement,
     typeStatementList, typeFunction, typeFunctionList, typeParameter, typeParameterList } nodeEnum;
 
 class ASTNode
@@ -13,6 +13,7 @@ public:
     nodeEnum type;
     int intValue;
     string strValue;
+    double dblValue;
 };
 
 class ASTNodeTerminal:public ASTNode{};
@@ -27,6 +28,7 @@ public:
 class typeASTNode:public ASTNodeTerminal{};
 class intASTNode:public ASTNodeTerminal{};
 class charASTNode:public ASTNodeTerminal{};
+class doubleASTNode:public ASTNodeTerminal{};
 class stringASTNode:public ASTNodeTerminal{};
 class idASTNode:public ASTNodeTerminal{};
 

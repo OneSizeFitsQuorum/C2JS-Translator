@@ -10,6 +10,7 @@ FILE* target;
 typeASTNode *_type(typeEnum value);
 intASTNode *_int(int value);
 stringASTNode *_string(string value);
+doubleASTNode *_double(double value);
 exprASTNode *_expr(int childNum,int _operator, ...);
 exprListASTNode *_exprList(int childNum, ...);
 statementASTNode *_statement(int childNum,int _statement, ...);
@@ -39,11 +40,12 @@ void test(const char* sFile, const char* tFile);
 %}
 
 %token<intValue>INTEGER
-%token<type>INT CHAR
+%token<dblValue>DOUBLE_NUM
+%token<type>INT CHAR DOUBLE
 %token<strValue>IDENTIFIER STRING
 
 %token INC_OP DEC_OP INC_OP_LEFT INC_OP_RIGHT DEC_OP_LEFT DEC_OP_RIGHT GE_OP LE_OP EQ_OP NE_OP AND_OP OR_OP
-%token DECLARE DECLARE_ARRAY
+%token DECLARE DECLARE_ARRAY ARRAY
 %token FOR WHILE BREAK CONTINUE IF ELSE RETURN PRINTF STRLEN
 
 %nonassoc IFX
@@ -86,6 +88,7 @@ parameter:
 typeName:
         INT                                                                         {$$ = _type($1);}
        |CHAR                                                                        {$$ = _type($1);}
+       |DOUBLE                                                                      {$$ = _type($1);}
        ;
 
 statementList:
@@ -107,7 +110,9 @@ statement:
        |IDENTIFIER '[' expr ']' '=' expr ';'                                        {$$ = _statement(3,'=',_id($1),$3,$6);}
        |typeName IDENTIFIER '=' expr ';'                                            {$$ = _statement(3,DECLARE,$1,_id($2),$4);}
        |typeName IDENTIFIER '[' ']' '=' expr ';'                                    {$$ = _statement(3,DECLARE_ARRAY,$1,_id($2),$6);}
+       |typeName IDENTIFIER '[' ']' '=' '{' exprList '}' ';'                        {$$ = _statement(3,ARRAY,$1,_id($2),$7);}
        |typeName IDENTIFIER '[' INTEGER ']' ';'                                     {$$ = _statement(3,DECLARE_ARRAY,$1,_id($2),_int($4));}
+       |typeName IDENTIFIER '[' INTEGER ']' '=' expr ';'                            {$$ = _statement(4,DECLARE_ARRAY,$1,_id($2),_int($4),$7);}
        |typeName IDENTIFIER ';'                                                     {$$ = _statement(2,DECLARE,$1,_id($2));}
        |INC_OP expr ';'                                                             {$$ = _statement(1,INC_OP_LEFT,$2);}
        |DEC_OP expr ';'                                                             {$$ = _statement(1,DEC_OP_LEFT,$2);}
@@ -124,6 +129,7 @@ expr:
         INTEGER                                                                     {$$ = _int($1);}
        |STRING                                                                      {$$ = _string($1);}
        |IDENTIFIER                                                                  {$$ = _id($1);}
+       |DOUBLE                                                                      {$$ = _double($1);}
        |'-' expr %prec UMINUS                                                       {$$ = _expr(1,UMINUS,$2);}
        |STRLEN '(' IDENTIFIER ')'                                                   {$$ = _expr(1,STRLEN,_id($3));}
        |IDENTIFIER '(' exprList ')'                                                 {$$ = _expr(2,IDENTIFIER,_id($1),$3);}
@@ -176,6 +182,14 @@ stringASTNode *_string(string value)
     stringASTNode *p = new stringASTNode();
     p->strValue = value;
     p->type = nodeEnum::typeString;
+    return p;
+}
+
+doubleASTNode *_double(double value)
+{
+    doubleASTNode *p = new doubleASTNode;
+    p->dblValue = value;
+    p->type = nodeEnum::typeDouble;
     return p;
 }
 
@@ -369,6 +383,7 @@ string codeParameterList(ASTNode* p)
     return code;
 }
 
+
 string codeType(ASTNode* p)
 {
     if (p->type != typeType){
@@ -522,8 +537,6 @@ string codeStatement(ASTNode* p, int indent_level)
     statementASTNode* s = (statementASTNode*)p;
     string code = "";
     switch (s->intValue) {
-        //case COMMENT:
-        //   break;
         case FOR:
             code = "for (" + codeStatement(s->child[0], 0) + codeExpr(s->child[1]) + "; " + codeExpr(s->child[2]) + ") " + codeStatementList(s->child[3], indent_level + 1);
             break;
@@ -566,11 +579,21 @@ string codeStatement(ASTNode* p, int indent_level)
             }
             break;
         case DECLARE_ARRAY:
-            if (s->child[2]->type == typeString) {
-                code = codeType(s->child[0]) + " " + codeIdentifier(s->child[1]) + " = " + codeString(s->child[2]) + ";";
-            } else {
-                code = codeType(s->child[0]) + " " + codeIdentifier(s->child[1]) + " = " + "new Array(" + codeInteger(s->child[2]) + ");";
+            if(s->childNum == 3)
+            {
+                if (s->child[2]->type == typeString) {
+                    code = codeType(s->child[0]) + " " + codeIdentifier(s->child[1]) + " = " + codeString(s->child[2]) + ";";
+                } else {
+                    code = codeType(s->child[0]) + " " + codeIdentifier(s->child[1]) + " = " + "new Array(" + codeInteger(s->child[2]) + ");";
+                }
             }
+            else
+            {
+                code = codeType(s->child[0]) + " " + codeIdentifier(s->child[1]) + " = " + codeString(s->child[3]) + ".split('');";
+            }
+            break;
+        case ARRAY:
+            code = codeType(s->child[0]) + " " + codeIdentifier(s->child[1]) + " = " + '[' + codeExprList(s->child[2]) + ']' + ";";
             break;
         case INC_OP_LEFT:
             code = "++" + codeExpr(s->child[0]) + ";";
@@ -677,5 +700,11 @@ int main()
     const char* level2 = "level2.c";
     const char* ans2 = "level2.js";
     test(level2, ans2);
+    const char* level3 = "level3.c";
+    const char* ans3 = "level3.js";
+    test(level3, ans3);
+    const char* level4 = "level4.c";
+    const char* ans4 = "level4.js";
+    test(level4, ans4);
 	return 0;
 }

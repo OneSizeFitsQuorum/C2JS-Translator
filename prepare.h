@@ -15,6 +15,7 @@ struct Node
 	union {
 		typeEnum type;
 		int intValue;
+		double dblValue;
 		ASTNode *ptr;
 	};
 };

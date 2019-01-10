@@ -24,6 +24,7 @@ string      ('(\\.|[^\\'])+'|\"(\\.|[^\\"])*\")
 
 "int"                               {yylval.type = intType;return(INT);}
 "char"                              {yylval.type = charType;return(CHAR);}
+"double"                            {yylval.type = doubleType;return(DOUBLE);}
 
 "return"		                    {return(RETURN);}
 "printf"                            {return(PRINTF);}
@@ -32,6 +33,9 @@ string      ('(\\.|[^\\'])+'|\"(\\.|[^\\"])*\")
 {identifier}                        {yylval.strValue=yytext;return(IDENTIFIER);}
 {string}                            {yylval.strValue=yytext;return(STRING);}
 {integer}                           {yylval.intValue=atoi(yytext);return(INTEGER);}
+
+{D}*"."{D}+                         { yylval.dblValue = atof(yytext); return(DOUBLE_NUM);}
+{D}+"."{D}*                         { yylval.dblValue = atof(yytext); return(DOUBLE_NUM);}
 
 ">="                                {return(GE_OP);}
 "<="			                    {return(LE_OP);}
